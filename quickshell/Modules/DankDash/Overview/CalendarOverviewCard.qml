@@ -13,6 +13,17 @@ Rectangle {
     property var selectedDateEvents: []
     property bool hasEvents: selectedDateEvents && selectedDateEvents.length > 0
 
+    readonly property color meetingColor: "#a6c8ff"
+    readonly property color oneOnOneColor: "#c3e88d"
+    readonly property color conflictColor: "#ffb4ab"
+
+    function getEventColor(event) {
+        if (!event) return Theme.primary
+        if (event.hasConflict) return conflictColor
+        if (event.attendeeCount === 1) return oneOnOneColor
+        return meetingColor
+    }
+
     signal closeDash()
 
     function weekStartJs() {
@@ -36,12 +47,15 @@ Rectangle {
     }
 
     function updateSelectedDateEvents() {
+        let events = []
         if (CalendarService && CalendarService.khalAvailable) {
-            const events = CalendarService.getEventsForDate(selectedDate)
-            selectedDateEvents = events
-        } else {
-            selectedDateEvents = []
+            events = events.concat(CalendarService.getEventsForDate(selectedDate))
         }
+        if (GCalService && GCalService.available) {
+            events = events.concat(GCalService.getEventsForDate(selectedDate))
+        }
+        events.sort((a, b) => a.start.getTime() - b.start.getTime())
+        selectedDateEvents = events
     }
 
     function loadEventsForMonth() {
@@ -65,6 +79,8 @@ Rectangle {
 
     onSelectedDateChanged: updateSelectedDateEvents()
     Component.onCompleted: {
+        console.log("CalendarOverviewCard: GCalService =", GCalService)
+        console.log("CalendarOverviewCard: GCalService.available =", GCalService?.available)
         loadEventsForMonth()
         updateSelectedDateEvents()
     }
@@ -83,6 +99,19 @@ Rectangle {
 
         target: CalendarService
         enabled: CalendarService !== null
+    }
+
+    Connections {
+        function onEventsChanged() {
+            updateSelectedDateEvents()
+        }
+
+        function onAvailableChanged() {
+            updateSelectedDateEvents()
+        }
+
+        target: GCalService
+        enabled: GCalService !== null
     }
 
     radius: Theme.cornerRadius
@@ -307,7 +336,7 @@ Rectangle {
                             width: 12
                             height: 2
                             radius: 1
-                            visible: CalendarService && CalendarService.khalAvailable && CalendarService.hasEventsForDate(dayDate)
+                            visible: (CalendarService?.khalAvailable && CalendarService.hasEventsForDate(dayDate)) || (GCalService?.available && GCalService.hasEventsForDate(dayDate))
                             color: isToday ? Qt.lighter(Theme.primary, 1.3) : Theme.primary
                             opacity: isToday ? 0.9 : 0.7
 
@@ -326,10 +355,8 @@ Rectangle {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            if (CalendarService && CalendarService.khalAvailable && CalendarService.hasEventsForDate(dayDate)) {
-                                root.selectedDate = dayDate
-                                root.showEventDetails = true
-                            }
+                            root.selectedDate = dayDate
+                            root.showEventDetails = true
                         }
                     }
                 }
@@ -345,9 +372,12 @@ Rectangle {
             spacing: Theme.spacingXS
 
             delegate: Rectangle {
+                readonly property bool isPast: modelData.end && modelData.end < new Date()
+
                 width: parent ? parent.width : 0
                 height: eventContent.implicitHeight + Theme.spacingS
                 radius: Theme.cornerRadius
+                opacity: isPast ? 0.5 : 1.0
                 color: {
                     if (modelData.url && eventMouseArea.containsMouse) {
                         return Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
@@ -373,7 +403,7 @@ Rectangle {
                     anchors.leftMargin: 3
                     anchors.verticalCenter: parent.verticalCenter
                     radius: 2
-                    color: Theme.primary
+                    color: isPast ? Theme.surfaceVariantText : root.getEventColor(modelData)
                     opacity: 0.8
                 }
 
@@ -391,7 +421,7 @@ Rectangle {
                         width: parent.width
                         text: modelData.title
                         font.pixelSize: Theme.fontSizeSmall
-                        color: Theme.surfaceText
+                        color: isPast ? Theme.surfaceVariantText : Theme.surfaceText
                         font.weight: Font.Medium
                         elide: Text.ElideRight
                         maximumLineCount: 1
@@ -413,7 +443,7 @@ Rectangle {
                             return ""
                         }
                         font.pixelSize: Theme.fontSizeSmall
-                        color: Qt.rgba(Theme.surfaceText.r, Theme.surfaceText.g, Theme.surfaceText.b, 0.7)
+                        color: Qt.rgba(Theme.surfaceText.r, Theme.surfaceText.g, Theme.surfaceText.b, isPast ? 0.4 : 0.7)
                         font.weight: Font.Normal
                         visible: text !== ""
                     }

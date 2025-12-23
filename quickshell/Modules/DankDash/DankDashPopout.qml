@@ -278,6 +278,10 @@ DankPopout {
                             {
                                 "icon": "wallpaper",
                                 "text": I18n.tr("Wallpapers")
+                            },
+                            {
+                                "icon": "event",
+                                "text": I18n.tr("Meetings")
                             }
                         ];
 
@@ -301,7 +305,7 @@ DankPopout {
                     }
 
                     onActionTriggered: function (index) {
-                        let settingsIndex = SettingsData.weatherEnabled ? 4 : 3;
+                        let settingsIndex = SettingsData.weatherEnabled ? 5 : 4;
                         if (index === settingsIndex) {
                             dashVisible = false;
                             PopoutService.focusOrToggleSettings();
@@ -324,7 +328,9 @@ DankPopout {
                             return mediaLoader.item?.implicitHeight ?? 410;
                         if (currentIndex === 2)
                             return wallpaperLoader.item?.implicitHeight ?? 410;
-                        if (SettingsData.weatherEnabled && currentIndex === 3)
+                        if (currentIndex === 3)
+                            return meetingsLoader.item?.implicitHeight ?? 410;
+                        if (SettingsData.weatherEnabled && currentIndex === 4)
                             return weatherLoader.item?.implicitHeight ?? 410;
                         return 410;
                     }
@@ -394,8 +400,16 @@ DankPopout {
                     }
 
                     Loader {
+                        id: meetingsLoader
+                        active: root.currentTabIndex === 3
+                        sourceComponent: Component {
+                            MeetingsTab {}
+                        }
+                    }
+
+                    Loader {
                         id: weatherLoader
-                        active: SettingsData.weatherEnabled && root.currentTabIndex === 3
+                        active: SettingsData.weatherEnabled && root.currentTabIndex === 4
                         sourceComponent: Component {
                             WeatherTab {}
                         }

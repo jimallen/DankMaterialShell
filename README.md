@@ -95,7 +95,10 @@ Unified interface for network, Bluetooth, audio devices, display settings, and n
 Notification center with grouping, rich text support, and keyboard navigation.
 
 **Media Integration**
-MPRIS player controls, calendar sync, weather widgets, and clipboard history with image previews.
+MPRIS player controls, weather widgets, and clipboard history with image previews.
+
+**Google Calendar**
+Meeting widget in bar, dedicated Meetings tab in DankDash with accordion view, color-coded 1:1s and conflicts, one-click join for video meetings.
 
 **Session Management**
 Lock screen, idle detection, auto-lock/suspend with separate AC/battery settings, and greeter support.

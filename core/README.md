@@ -77,6 +77,7 @@ Custom IPC via unix socket (JSON API) for shell communication.
 - `dms plugins [install|browse|search]` - Plugin management
 - `dms brightness [list|set]` - Control display/monitor brightness
 - `dms color pick` - Native color picker (see below)
+- `dms gcal` - Google Calendar integration (see below)
 - `dms update` - Update DMS and dependencies (disabled in distro packages)
 - `dms greeter install` - Install greetd greeter (disabled in distro packages)
 
@@ -93,6 +94,49 @@ dms color pick -a           # Auto-copy to clipboard
 ```
 
 The on-screen preview displays the selected format. JSON output includes hex, RGB, HSL, HSV, and CMYK values.
+
+### Google Calendar
+
+Integration with Google Calendar to display upcoming meetings in the shell.
+
+**Setup:**
+
+```bash
+dms gcal auth           # Authenticate with Google (opens browser)
+dms gcal status         # Check authentication status
+dms gcal logout         # Remove stored credentials
+```
+
+**Fetching Events:**
+
+```bash
+dms gcal events                 # Get events for next 48 hours (default)
+dms gcal events --hours 24      # Get events for next 24 hours
+dms gcal events --calendars ID  # Specify calendar IDs (comma-separated)
+dms gcal calendars              # List available calendars
+```
+
+**Event Filtering:**
+
+Events are automatically filtered to show only:
+- Meetings with attendees (excludes personal events, focus time, etc.)
+- Meetings you've accepted (excludes declined/tentative)
+
+**Output Format:**
+
+All commands output JSON with event details including:
+- Title, start/end times
+- Attendee count and names
+- Meeting URL (Google Meet, Zoom, etc.)
+- Conflict detection (overlapping meetings)
+- Your response status
+
+**Shell Integration:**
+
+The `GCalService` in quickshell consumes this data to power:
+- MeetingWidget (bar pill showing next meeting)
+- MeetingsTab (full meeting list in DankDash)
+- CalendarOverviewCard (calendar with event indicators)
 
 ## Building
 
