@@ -474,24 +474,32 @@ Singleton {
 
         if (themeName === dynamic) {
             currentTheme = dynamic;
-            currentThemeCategory = dynamic;
+            if (currentThemeCategory !== "registry")
+                currentThemeCategory = dynamic;
         } else if (themeName === custom) {
             currentTheme = custom;
-            currentThemeCategory = custom;
+            if (currentThemeCategory !== "registry")
+                currentThemeCategory = custom;
             if (typeof SettingsData !== "undefined" && SettingsData.customThemeFile) {
                 loadCustomThemeFromFile(SettingsData.customThemeFile);
             }
+        } else if (themeName === "" && currentThemeCategory === "registry") {
+            // Registry category selected but no theme chosen yet
         } else {
             currentTheme = themeName;
-            if (StockThemes.isCatppuccinVariant(themeName)) {
-                currentThemeCategory = "catppuccin";
-            } else {
-                currentThemeCategory = "generic";
+            if (currentThemeCategory !== "registry") {
+                if (StockThemes.isCatppuccinVariant(themeName)) {
+                    currentThemeCategory = "catppuccin";
+                } else {
+                    currentThemeCategory = "generic";
+                }
             }
         }
         const isGreeterMode = (typeof SessionData !== "undefined" && SessionData.isGreeterMode);
-        if (savePrefs && typeof SettingsData !== "undefined" && !isGreeterMode)
+        if (savePrefs && typeof SettingsData !== "undefined" && !isGreeterMode) {
+            SettingsData.set("currentThemeCategory", currentThemeCategory);
             SettingsData.set("currentThemeName", currentTheme);
+        }
 
         if (!isGreeterMode) {
             generateSystemThemesFromCurrentTheme();
@@ -829,7 +837,7 @@ Singleton {
         if (typeof SettingsData !== "undefined") {
             const skipTemplates = [];
             if (!SettingsData.runDmsMatugenTemplates) {
-                skipTemplates.push("gtk", "niri", "qt5ct", "qt6ct", "firefox", "pywalfox", "vesktop", "ghostty", "kitty", "foot", "alacritty", "wezterm", "dgop", "kcolorscheme", "vscode");
+                skipTemplates.push("gtk", "neovim", "niri", "qt5ct", "qt6ct", "firefox", "pywalfox", "vesktop", "equibop", "ghostty", "kitty", "foot", "alacritty", "wezterm", "dgop", "kcolorscheme", "vscode");
             } else {
                 if (!SettingsData.matugenTemplateGtk)
                     skipTemplates.push("gtk");
@@ -845,12 +853,16 @@ Singleton {
                     skipTemplates.push("pywalfox");
                 if (!SettingsData.matugenTemplateVesktop)
                     skipTemplates.push("vesktop");
+                if (!SettingsData.matugenTemplateEquibop)
+                    skipTemplates.push("equibop");
                 if (!SettingsData.matugenTemplateGhostty)
                     skipTemplates.push("ghostty");
                 if (!SettingsData.matugenTemplateKitty)
                     skipTemplates.push("kitty");
                 if (!SettingsData.matugenTemplateFoot)
                     skipTemplates.push("foot");
+                if (!SettingsData.matugenTemplateNeovim)
+                    skipTemplates.push("nvim");
                 if (!SettingsData.matugenTemplateAlacritty)
                     skipTemplates.push("alacritty");
                 if (!SettingsData.matugenTemplateWezterm)

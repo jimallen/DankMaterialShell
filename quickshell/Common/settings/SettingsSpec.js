@@ -7,6 +7,7 @@ function percentToUnit(v) {
 
 var SPEC = {
     currentThemeName: { def: "blue", onChange: "applyStoredTheme" },
+    currentThemeCategory: { def: "generic" },
     customThemeFile: { def: "" },
     matugenScheme: { def: "scheme-tonal-spot", onChange: "regenSystemThemes" },
     runUserMatugenTemplates: { def: true, onChange: "regenSystemThemes" },
@@ -178,10 +179,12 @@ var SPEC = {
     matugenTemplateFirefox: { def: true },
     matugenTemplatePywalfox: { def: true },
     matugenTemplateVesktop: { def: true },
+    matugenTemplateEquibop: { def: true },
     matugenTemplateGhostty: { def: true },
     matugenTemplateKitty: { def: true },
     matugenTemplateFoot: { def: true },
     matugenTemplateAlacritty: { def: true },
+    matugenTemplateNeovim: { def: true },
     matugenTemplateWezterm: { def: true },
     matugenTemplateDgop: { def: true },
     matugenTemplateKcolorscheme: { def: true },
@@ -201,13 +204,12 @@ var SPEC = {
     dockBorderColor: { def: "surfaceText" },
     dockBorderOpacity: { def: 1.0, coerce: percentToUnit },
     dockBorderThickness: { def: 1 },
+    dockIsolateDisplays: { def: false },
 
     notificationOverlayEnabled: { def: false },
     overviewRows: { def: 2, persist: false },
     overviewColumns: { def: 5, persist: false },
     overviewScale: { def: 0.16, persist: false },
-
-    modalDarkenBackground: { def: true },
 
     lockScreenShowPowerActions: { def: true },
     lockScreenShowSystemIcons: { def: true },
@@ -292,6 +294,7 @@ var SPEC = {
         fontScale: 1.0,
         autoHide: false,
         autoHideDelay: 250,
+        showOnWindowsOpen: false,
         openOnOverview: false,
         visible: true,
         popupGapsAuto: true,
@@ -335,13 +338,17 @@ var SPEC = {
     systemMonitorTopProcessCount: { def: 3 },
     systemMonitorTopProcessSortBy: { def: "cpu" },
     systemMonitorGraphInterval: { def: 60 },
+    systemMonitorLayoutMode: { def: "auto" },
     systemMonitorX: { def: -1 },
     systemMonitorY: { def: -1 },
     systemMonitorWidth: { def: 320 },
     systemMonitorHeight: { def: 480 },
     systemMonitorDisplayPreferences: { def: ["all"] },
     systemMonitorVariants: { def: [] },
-    desktopWidgetPositions: { def: {} }
+    desktopWidgetPositions: { def: {} },
+    desktopWidgetGridSettings: { def: {} },
+
+    desktopWidgetInstances: { def: [] }
 };
 
 function getValidKeys() {

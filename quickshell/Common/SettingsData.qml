@@ -14,7 +14,7 @@ import "settings/SettingsStore.js" as Store
 Singleton {
     id: root
 
-    readonly property int settingsConfigVersion: 3
+    readonly property int settingsConfigVersion: 4
 
     readonly property bool isGreeterMode: Quickshell.env("DMS_RUN_GREETER") === "1" || Quickshell.env("DMS_RUN_GREETER") === "true"
 
@@ -63,6 +63,7 @@ Singleton {
     property alias dankBarRightWidgetsModel: rightWidgetsModel
 
     property string currentThemeName: "blue"
+    property string currentThemeCategory: "generic"
     property string customThemeFile: ""
     property string matugenScheme: "scheme-tonal-spot"
     property bool runUserMatugenTemplates: true
@@ -279,9 +280,11 @@ Singleton {
     property bool matugenTemplateFirefox: true
     property bool matugenTemplatePywalfox: true
     property bool matugenTemplateVesktop: true
+    property bool matugenTemplateEquibop: true
     property bool matugenTemplateGhostty: true
     property bool matugenTemplateKitty: true
     property bool matugenTemplateFoot: true
+    property bool matugenTemplateNeovim: true
     property bool matugenTemplateAlacritty: true
     property bool matugenTemplateWezterm: true
     property bool matugenTemplateDgop: true
@@ -302,13 +305,12 @@ Singleton {
     property string dockBorderColor: "surfaceText"
     property real dockBorderOpacity: 1.0
     property int dockBorderThickness: 1
+    property bool dockIsolateDisplays: false
 
     property bool notificationOverlayEnabled: false
     property int overviewRows: 2
     property int overviewColumns: 5
     property real overviewScale: 0.16
-
-    property bool modalDarkenBackground: true
 
     property bool lockScreenShowPowerActions: true
     property bool lockScreenShowSystemIcons: true
@@ -395,6 +397,7 @@ Singleton {
             "fontScale": 1.0,
             "autoHide": false,
             "autoHideDelay": 250,
+            "showOnWindowsOpen": false,
             "openOnOverview": false,
             "visible": true,
             "popupGapsAuto": true,
@@ -447,6 +450,22 @@ Singleton {
     property var systemMonitorDisplayPreferences: ["all"]
     property var systemMonitorVariants: []
     property var desktopWidgetPositions: ({})
+    property var desktopWidgetGridSettings: ({})
+    property var desktopWidgetInstances: []
+
+    function getDesktopWidgetGridSetting(screenKey, property, defaultValue) {
+        const val = desktopWidgetGridSettings?.[screenKey]?.[property];
+        return val !== undefined ? val : defaultValue;
+    }
+
+    function setDesktopWidgetGridSetting(screenKey, property, value) {
+        const allSettings = JSON.parse(JSON.stringify(desktopWidgetGridSettings || {}));
+        if (!allSettings[screenKey])
+            allSettings[screenKey] = {};
+        allSettings[screenKey][property] = value;
+        desktopWidgetGridSettings = allSettings;
+        saveSettings();
+    }
 
     function getDesktopWidgetPosition(pluginId, screenKey, property, defaultValue) {
         const pos = desktopWidgetPositions?.[pluginId]?.[screenKey]?.[property];
@@ -529,6 +548,73 @@ Singleton {
         };
     }
 
+    function createDesktopWidgetInstance(widgetType, name, config) {
+        const id = "dw_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+        const instance = {
+            id: id,
+            widgetType: widgetType,
+            name: name || widgetType,
+            enabled: true,
+            config: config || {},
+            positions: {}
+        };
+        const instances = JSON.parse(JSON.stringify(desktopWidgetInstances || []));
+        instances.push(instance);
+        desktopWidgetInstances = instances;
+        saveSettings();
+        return instance;
+    }
+
+    function updateDesktopWidgetInstance(instanceId, updates) {
+        const instances = JSON.parse(JSON.stringify(desktopWidgetInstances || []));
+        const idx = instances.findIndex(inst => inst.id === instanceId);
+        if (idx === -1) return;
+        Object.assign(instances[idx], updates);
+        desktopWidgetInstances = instances;
+        saveSettings();
+    }
+
+    function updateDesktopWidgetInstanceConfig(instanceId, configUpdates) {
+        const instances = JSON.parse(JSON.stringify(desktopWidgetInstances || []));
+        const idx = instances.findIndex(inst => inst.id === instanceId);
+        if (idx === -1) return;
+        instances[idx].config = Object.assign({}, instances[idx].config || {}, configUpdates);
+        desktopWidgetInstances = instances;
+        saveSettings();
+    }
+
+    function updateDesktopWidgetInstancePosition(instanceId, screenKey, positionUpdates) {
+        const instances = JSON.parse(JSON.stringify(desktopWidgetInstances || []));
+        const idx = instances.findIndex(inst => inst.id === instanceId);
+        if (idx === -1) return;
+        if (!instances[idx].positions) instances[idx].positions = {};
+        instances[idx].positions[screenKey] = Object.assign(
+            {},
+            instances[idx].positions[screenKey] || {},
+            positionUpdates
+        );
+        desktopWidgetInstances = instances;
+        saveSettings();
+    }
+
+    function removeDesktopWidgetInstance(instanceId) {
+        const instances = (desktopWidgetInstances || []).filter(inst => inst.id !== instanceId);
+        desktopWidgetInstances = instances;
+        saveSettings();
+    }
+
+    function getDesktopWidgetInstance(instanceId) {
+        return (desktopWidgetInstances || []).find(inst => inst.id === instanceId) || null;
+    }
+
+    function getDesktopWidgetInstancesOfType(widgetType) {
+        return (desktopWidgetInstances || []).filter(inst => inst.widgetType === widgetType);
+    }
+
+    function getEnabledDesktopWidgetInstances() {
+        return (desktopWidgetInstances || []).filter(inst => inst.enabled);
+    }
+
     signal forceDankBarLayoutRefresh
     signal forceDockLayoutRefresh
     signal widgetDataChanged
@@ -546,10 +632,12 @@ Singleton {
 
     function applyStoredTheme() {
         if (typeof Theme !== "undefined") {
+            Theme.currentThemeCategory = currentThemeCategory;
             Theme.switchTheme(currentThemeName, false, false);
         } else {
             Qt.callLater(function () {
                 if (typeof Theme !== "undefined") {
+                    Theme.currentThemeCategory = currentThemeCategory;
                     Theme.switchTheme(currentThemeName, false, false);
                 }
             });
@@ -1072,7 +1160,7 @@ Singleton {
         updateBarConfigs();
 
         if (positionChanged) {
-            NotificationService.clearAllPopups();
+            NotificationService.dismissAllPopups();
         }
     }
 
@@ -1217,7 +1305,7 @@ Singleton {
     }
 
     function sendTestNotifications() {
-        NotificationService.clearAllPopups();
+        NotificationService.dismissAllPopups();
         sendTestNotification(0);
         testNotifTimer1.start();
         testNotifTimer2.start();
